@@ -6,7 +6,8 @@ from datetime import date
 from collections import defaultdict
 from copy import copy
 
-reporting_year = '2015'
+reporting_year = '2016'
+debug = False
 
 fields = [
     'first_name',
@@ -16,7 +17,6 @@ fields = [
     'address_co',
     'address_street',
     'address_postal_code',
-    'address_town',
     'email',
     'phone',
     'confirmed_membership_at',
@@ -37,11 +37,11 @@ def strip_accents(text):
 
 def parse_gender(text):
     text = text.upper()
-    if text.startswith('K') or text.startswith('F'):
+    if text in ['K', 'F', 'FEMALE', 'KVINNA', 'TJEJ']:
         return 'K'
-    elif text.startswith('M'):
+    elif text in ['M', 'MAN', 'MALE', 'KILLE']:
         return 'M'
-    elif text == '' or text == '?':
+    elif text in ['', '?', 'EJ SVAR', 'ANNAT']:
         return None
     else:
         raise Exception('invalid gender: ' + text)
@@ -62,7 +62,7 @@ def format_date(parts):
 
 def parse_date(text):
     if len(text) == 0: return None
-    match = re.match(r'^(\d{2,4})[/-]?(\d{2})[/-]?(\d{2})$', text)
+    match = re.match(r'^(\d{2,4})[\./-]?(\d{2})[\./-]?(\d{2})$', text)
     if match:
         parts = match.groups()
         year = parse_year(parts[0])
@@ -81,7 +81,7 @@ def format_birth_date(parts):
         return parts[0]
 
 def parse_birth_date(text):
-    if len(text) == 0: return None
+    if len(text) == 0 or text in ['?', '0']: return None
     match = re.match(r'^(\d{2,4})(?:[/-]?(\d{2})[/-]?(\d{2})(?:[/-]?(\d{4}))?)?$', text)
     if match:
         parts = match.groups()
@@ -106,6 +106,7 @@ def format_groups(groups):
 def load(infile, group=None):
     result = []
     for row in csv.DictReader(infile, fields):
+        if debug: print(row)
         clean_whitespace(row)
         row['gender'] = parse_gender(row['gender'])
         row['birth_date'] = parse_birth_date(row['birth_date'])
@@ -150,6 +151,8 @@ def remove_invalid(rows):
             remove(row, 'gender not given')
         elif row['address_postal_code'] in ['', '-', 'Saknas', 'Vetej', None]:
             remove(row, 'address_postal_code not given')
+        elif row['email'] == '' and row['phone'] == '':
+            remove(row, 'neither email nor phone given')
         else:
             kept.append(row)
 
@@ -315,6 +318,7 @@ def normalize_file(path):
 
 def process_all(files, fn):
     for path in files:
+        print('Processing "{}"...'.format(os.path.basename(path)))
         fn(path)
 
 def merge_files(files):
