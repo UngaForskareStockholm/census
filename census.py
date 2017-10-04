@@ -266,35 +266,47 @@ def age_stats(rows):
     return ages 
 
 def statistics_file(path):
+    def format_count(count):
+        return '{:>4}'.format(count)
+
+    def format_statistic(count, total):
+        return '{:>4} {:>7.2%}'.format(count, count / total)
+
     loaded = load(open(path))
     stockholm, unstockholm = remove_not_stockholm(loaded)
-    print('= Total:       ' + str(len(loaded)))
-    print('= Unstockholm: ' + str(len(unstockholm)))
-    print('= Stockholm:   ' + str(len(stockholm)))
     print()
-
+    print('# Länstillhörighet')
+    print('Totalt:                  ' + format_count(len(loaded)))
+    print('Stockholm:               ' + format_statistic(len(stockholm), len(loaded)))
+    print('Ej Stockholm:            ' + format_statistic(len(unstockholm), len(loaded)))
+    print()
+    print()
+    print('# Ålder- och könsfördelning av medlemmar bosatta i Stockholms Län')
     all = stockholm
-    
-    def format_statistic(count, total):
-        return '{:>4} {:.2%}'.format(count, count / total)
 
+    print()
+    print('## Könsfördelning alla åldrar')
     genders_all = gender_stats(all)
-    print('Totalt antal medlemmar: ' + str(len(all)))
-    print('Totalt andel kvinnor:   ' + format_statistic(genders_all['K'], len(all)))
-    print('Totalt andel män:       ' + format_statistic(genders_all['M'], len(all)))
+    print('Totalt antal medlemmar:  ' + format_count(len(all)))
+    print('Totalt andel kvinnor:    ' + format_statistic(genders_all['K'], len(all)))
+    print('Totalt andel män:        ' + format_statistic(genders_all['M'], len(all)))
 
+    print()
+    print('## Könsfördelning 6-25 år')
     eligable = list(filter(is_eligable_for_grant, all))
     genders_eligable = gender_stats(eligable)
-    print('Total antal   6-25:     ' + str(len(eligable)))
-    print('Andel flickor 6-25:     ' + format_statistic(genders_eligable['K'], len(eligable)))
-    print('Andel pojkar  6-25:     ' + format_statistic(genders_eligable['M'], len(eligable)))
+    print('Total antal   6-25 år:   ' + format_count(len(eligable)))
+    print('Andel flickor 6-25 år:   ' + format_statistic(genders_eligable['K'], len(eligable)))
+    print('Andel pojkar  6-25 år:   ' + format_statistic(genders_eligable['M'], len(eligable)))
 
+    print()
+    print('## Åldersfördelning')
     ages_all = age_stats(all)
-    print(' 0-5:  ' + format_statistic(ages_all['0-5'], len(all)))
-    print(' 6-12: ' + format_statistic(ages_all['6-12'], len(all)))
-    print('13-20: ' + format_statistic(ages_all['13-20'], len(all)))
-    print('21-25: ' + format_statistic(ages_all['21-25'], len(all)))
-    print('26-:   ' + format_statistic(ages_all['26+'], len(all)))
+    print(' 0-5 år:                 ' + format_statistic(ages_all['0-5'], len(all)))
+    print(' 6-12 år:                ' + format_statistic(ages_all['6-12'], len(all)))
+    print('13-20 år:                ' + format_statistic(ages_all['13-20'], len(all)))
+    print('21-25 år:                ' + format_statistic(ages_all['21-25'], len(all)))
+    print('26 år och äldre:         ' + format_statistic(ages_all['26+'], len(all)))
 
 def eligable_file(path):
     group = os.path.splitext(os.path.basename(path))[0]
