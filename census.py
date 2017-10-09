@@ -1,15 +1,15 @@
 #!/bin/env python3
 # coding=utf-8
-import sys, os, re
+import os
+import re
+import sys
 import csv
-from datetime import date
 from collections import defaultdict
 from copy import copy
 
-reporting_year = '2016'
-debug = False
+REPORTING_YEAR = '2016'
 
-fields = [
+FIELDS = [
     'first_name',
     'last_name',
     'birth_date',  # Can be SSN, birth date or birth year
@@ -50,8 +50,7 @@ def parse_year(text):
     if len(text) == 2:
         if int(text) > 50:
             return '19' + text
-        else:
-            return '20' + text
+        return '20' + text
     return text
 
 def format_date(parts):
@@ -61,12 +60,15 @@ def format_date(parts):
     return '{0}-{1}-{2}'.format(parts[0], parts[1], parts[2])
 
 def parse_date(text):
-    if len(text) == 0: return None
+    if not text:
+        return None
+
     match = re.match(r'^(\d{2,4})[\./-]?(\d{2})[\./-]?(\d{2})$', text)
     if match:
         parts = match.groups()
         year = parse_year(parts[0])
         return (year, parts[1], parts[2])
+
     raise Exception('invalid confirmation date: ' + text)
 
 def format_birth_date(parts):
@@ -77,11 +79,12 @@ def format_birth_date(parts):
         return '{0}-{1}-{2}-{3}'.format(parts[0], parts[1], parts[2], parts[3])
     elif parts[1] is not None:
         return '{0}-{1}-{2}'.format(parts[0], parts[1], parts[2])
-    else:
-        return parts[0]
+    return parts[0]
 
 def parse_birth_date(text):
-    if len(text) == 0 or text in ['?', '0']: return None
+    if text in ['', '?', '0']:
+        return None
+
     match = re.match(r'^(\d{2,4})(?:[/-]?(\d{2})[/-]?(\d{2})(?:[/-]?(\d{4}))?)?$', text)
     if match:
         parts = match.groups()
@@ -97,22 +100,20 @@ def fudge_gender(birth_date):
 def parse_groups(text):
     if text is not None:
         return text.split(';')
-    else:
-        return []
+    return []
 
 def format_groups(groups):
     return ';'.join(groups)
 
 def load(infile, group=None):
     result = []
-    for row in csv.DictReader(infile, fields):
-        if debug: print(row)
+    for row in csv.DictReader(infile, FIELDS):
         clean_whitespace(row)
         row['gender'] = parse_gender(row['gender'])
         row['birth_date'] = parse_birth_date(row['birth_date'])
         row['confirmed_membership_at'] = parse_date(row['confirmed_membership_at'])
         row['groups'] = parse_groups(row['groups'])
-        if len(row['groups']) == 0 and group is not None:
+        if not row['groups'] and group is not None:
             row['groups'].append(group)
         if row['gender'] is None and row['birth_date'] is not None:
             row['gender'] = fudge_gender(row['birth_date'])
@@ -120,22 +121,18 @@ def load(infile, group=None):
     return result
 
 def save(rows, outfile):
-    writer = csv.DictWriter(outfile, fields)
+    writer = csv.DictWriter(outfile, FIELDS)
     for row in rows:
         copied = copy(row)
         copied['birth_date'] = format_birth_date(copied['birth_date'])
         copied['confirmed_membership_at'] = format_date(copied['confirmed_membership_at'])
         copied['groups'] = format_groups(copied['groups'])
-        
-        #if 'removal_cause' in copied:
-        #    copied['removal_cause'] = ', '.join(copied['removal_cause'])
-
         writer.writerow(copied)
 
 def remove_invalid(rows):
     kept = []
     invalid = []
-    
+
     def remove(row, why):
         row['removal_cause'] = why
         invalid.append(row)
@@ -143,8 +140,8 @@ def remove_invalid(rows):
     for row in rows:
         if row['confirmed_membership_at'] is None:
             remove(row, 'confirmed_membership_at not given')
-        elif row['confirmed_membership_at'][0] != reporting_year:
-            remove(row, 'confirmed_membership_at is not ' + reporting_year)
+        elif row['confirmed_membership_at'][0] != REPORTING_YEAR:
+            remove(row, 'confirmed_membership_at is not ' + REPORTING_YEAR)
         elif row['birth_date'] is None:
             remove(row, 'birth_date not given')
         elif row['gender'] is None:
@@ -167,48 +164,44 @@ def remove_not_stockholm(rows):
         removed.append(row)
 
     for row in rows:
-        if not row['address_postal_code'].startswith('1'): 
+        if not row['address_postal_code'].startswith('1'):
             remove(row, 'address_postal_code not in stockholm')
         else:
-            kept.append(row) 
-    
+            kept.append(row)
+
     return (kept, removed)
 
 def maybe_duplicates(rows):
     def make_key(row):
-        return strip_accents(row['first_name']).casefold() + ':' + strip_accents(row['last_name']).casefold()
+        return strip_accents(row['first_name']).casefold() + \
+            ':' + strip_accents(row['last_name']).casefold()
 
-    by = {}
+    rows_by_key = defaultdict(list)
     for row in rows:
-        key = make_key(row)
-        if key not in by: by[key] = []
-        by[key].append(row)
+        rows_by_key[make_key(row)].append(row)
 
     maybe = []
-    for member in by.values():
+    for member in rows_by_key.values():
         if len(member) > 1:
             maybe.extend(member)
-    
+
     return maybe
-    
 
 def remove_duplicates(rows):
     def make_key(row):
-        bd = row['birth_date']
+        date = row['birth_date']
         return strip_accents(row['first_name']).casefold() + \
             ':' + strip_accents(row['last_name']).casefold() + \
-            ':' + str(bd[0]) + str(bd[1]) + str(bd[2]) + \
+            ':' + str(date[0]) + str(date[1]) + str(date[2]) + \
             ':' + str(row['address_postal_code'])
 
-    by = {}
+    rows_by_key = defaultdict(list)
     for row in rows:
-        key = make_key(row)
-        if key not in by: by[key] = []
-        by[key].append(row)
+        rows_by_key[make_key(row)].append(row)
 
     unique = []
     duplicates = []
-    for member in by.values():
+    for member in rows_by_key.values():
         groups = []
         for single in member:
             for group in single['groups']:
@@ -221,11 +214,11 @@ def remove_duplicates(rows):
 
         if len(member) > 1:
             duplicates.extend(member)
-    
+
     return (unique, duplicates)
 
 def calculate_age(row):
-    result = int(reporting_year) - int(row['birth_date'][0])
+    result = int(REPORTING_YEAR) - int(row['birth_date'][0])
     assert result >= 0
     return result
 
@@ -233,23 +226,23 @@ def is_eligable_for_grant(row):
     return 6 <= calculate_age(row) <= 25
 
 def print_removal_cause_stats(rows):
-    counts = defaultdict(lambda: 0)
+    counts = defaultdict(int)
     for row in rows:
         counts[row['removal_cause']] += 1
-    for (k, v) in counts.items():
-        print('  ' + k + ': ' + str(v))
+    for (key, value) in counts.items():
+        print('  ' + key + ': ' + str(value))
 
 def gender_stats(rows):
-    genders = defaultdict(lambda: 0)
+    genders = defaultdict(int)
 
     for row in rows:
         genders[row['gender']] += 1
-    
+
     return genders
 
 def age_stats(rows):
-    ages = defaultdict(lambda: 0)
-    
+    ages = defaultdict(int)
+
     for row in rows:
         age = calculate_age(row)
         if 0 <= age <= 5:
@@ -262,8 +255,8 @@ def age_stats(rows):
             ages['21-25'] += 1
         else:
             ages['26+'] += 1
-    
-    return ages 
+
+    return ages
 
 def statistics_file(path):
     def format_count(count):
@@ -282,18 +275,17 @@ def statistics_file(path):
     print()
     print()
     print('# Ålder- och könsfördelning av medlemmar bosatta i Stockholms Län')
-    all = stockholm
 
     print()
     print('## Könsfördelning alla åldrar')
-    genders_all = gender_stats(all)
-    print('Totalt antal medlemmar:  ' + format_count(len(all)))
-    print('Totalt andel kvinnor:    ' + format_statistic(genders_all['K'], len(all)))
-    print('Totalt andel män:        ' + format_statistic(genders_all['M'], len(all)))
+    genders_all = gender_stats(stockholm)
+    print('Totalt antal medlemmar:  ' + format_count(len(stockholm)))
+    print('Totalt andel kvinnor:    ' + format_statistic(genders_all['K'], len(stockholm)))
+    print('Totalt andel män:        ' + format_statistic(genders_all['M'], len(stockholm)))
 
     print()
     print('## Könsfördelning 6-25 år')
-    eligable = list(filter(is_eligable_for_grant, all))
+    eligable = list(filter(is_eligable_for_grant, stockholm))
     genders_eligable = gender_stats(eligable)
     print('Total antal   6-25 år:   ' + format_count(len(eligable)))
     print('Andel flickor 6-25 år:   ' + format_statistic(genders_eligable['K'], len(eligable)))
@@ -301,18 +293,18 @@ def statistics_file(path):
 
     print()
     print('## Åldersfördelning')
-    ages_all = age_stats(all)
-    print(' 0-5 år:                 ' + format_statistic(ages_all['0-5'], len(all)))
-    print(' 6-12 år:                ' + format_statistic(ages_all['6-12'], len(all)))
-    print('13-20 år:                ' + format_statistic(ages_all['13-20'], len(all)))
-    print('21-25 år:                ' + format_statistic(ages_all['21-25'], len(all)))
-    print('26 år och äldre:         ' + format_statistic(ages_all['26+'], len(all)))
+    ages_all = age_stats(stockholm)
+    print(' 0-5 år:                 ' + format_statistic(ages_all['0-5'], len(stockholm)))
+    print(' 6-12 år:                ' + format_statistic(ages_all['6-12'], len(stockholm)))
+    print('13-20 år:                ' + format_statistic(ages_all['13-20'], len(stockholm)))
+    print('21-25 år:                ' + format_statistic(ages_all['21-25'], len(stockholm)))
+    print('26 år och äldre:         ' + format_statistic(ages_all['26+'], len(stockholm)))
 
 def eligable_file(path):
     group = os.path.splitext(os.path.basename(path))[0]
     loaded = load(open(path), group)
 
-    stockholm, unstockholm = remove_not_stockholm(loaded)
+    stockholm, _ = remove_not_stockholm(loaded)
     eligable = list(filter(is_eligable_for_grant, stockholm))
     print('{:<40} {:>4}'.format(group, len(eligable)))
 
@@ -325,30 +317,30 @@ def normalize_file(path):
     print_removal_cause_stats(invalid)
 
     save(kept, open(path + '.ok', 'w'))
-    if len(invalid) > 0:
+    if invalid:
         save(invalid, open(path + '.invalid', 'w'))
 
-def process_all(files, fn):
+def process_all(files, function):
     for path in files:
         print('Processing "{}"...'.format(os.path.basename(path)))
-        fn(path)
+        function(path)
 
 def merge_files(files):
-    all = []
+    everything = []
     for path in files:
         print('Loading "{}"...'.format(os.path.basename(path)))
         loaded = load(open(path))
-        all.extend(loaded)
-    
-    unique, duplicates = remove_duplicates(all)
-    maybe = maybe_duplicates(all)
+        everything.extend(loaded)
+
+    unique, duplicates = remove_duplicates(everything)
+    maybe = maybe_duplicates(everything)
 
     print()
     print('Merged:')
-    print('= All ' + str(len(all)))
+    print('= All ' + str(len(everything)))
     print('= Unique ' + str(len(unique)))
-    print('= Duplicates ' + str(len(all) - len(unique)))
-    
+    print('= Duplicates ' + str(len(everything) - len(unique)))
+
     def sort_key(row):
         return strip_accents(row['first_name']).casefold() + \
             ':' + strip_accents(row['last_name']).casefold() + \
@@ -358,13 +350,13 @@ def merge_files(files):
     save(duplicates, open('dups.csv', 'w'))
     save(maybe, open('maybedups.csv', 'w'))
 
-if __name__ == '__main__':
-    if len(sys.argv) < 3 or sys.argv[1] not in ['normalize', 'merge', 'eligable', 'stats']:
-        print('Usage: {} normalize|merge|eligable|stats file [file ...]'.format(sys.argv[0]))
-        sys.exit(1)
+def main(args):
+    if len(args) < 3 or args[1] not in ['normalize', 'merge', 'eligable', 'stats']:
+        print('Usage: {} normalize|merge|eligable|stats file [file ...]'.format(args[0]))
+        return 1
 
-    mode = sys.argv[1]
-    files = sys.argv[2:]
+    mode = args[1]
+    files = args[2:]
 
     if mode == 'normalize':
         process_all(files, normalize_file)
@@ -374,3 +366,8 @@ if __name__ == '__main__':
         process_all(files, eligable_file)
     elif mode == 'merge':
         merge_files(files)
+
+    return 0
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv))
