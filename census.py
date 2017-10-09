@@ -44,7 +44,7 @@ def parse_gender(text):
     elif text in ['', '?', 'EJ SVAR', 'ANNAT']:
         return None
     else:
-        raise Exception('invalid gender: ' + text)
+        raise ValueError('invalid gender: ' + text)
 
 def parse_year(text):
     if len(text) == 2:
@@ -69,7 +69,7 @@ def parse_date(text):
         year = parse_year(parts[0])
         return (year, parts[1], parts[2])
 
-    raise Exception('invalid confirmation date: ' + text)
+    raise ValueError('invalid confirmation date: ' + text)
 
 def format_birth_date(parts):
     if parts is None:
@@ -90,7 +90,7 @@ def parse_birth_date(text):
         parts = match.groups()
         year = parse_year(parts[0])
         return (year, parts[1], parts[2], parts[3])
-    raise Exception('invalid birth date: ' + text)
+    raise ValueError('invalid birth date: ' + text)
 
 def fudge_gender(birth_date):
     if birth_date[3] is not None:

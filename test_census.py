@@ -20,7 +20,7 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(None, parse_gender('ej svar'))
         self.assertEqual(None, parse_gender('ANNAT'))
 
-        self.assertRaisesRegex(Exception, 'invalid gender.*', parse_gender, 'WAT')
+        self.assertRaisesRegex(ValueError, 'invalid gender.*', parse_gender, 'WAT')
 
     def test_parse_year(self):
         from census import parse_year
@@ -37,7 +37,7 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(('2017', '10', '23'), parse_date('2017-10-23'))
         self.assertEqual(('2017', '10', '23'), parse_date('2017/10/23'))
         self.assertEqual(('2017', '10', '23'), parse_date('2017/10/23'))
-        self.assertRaises(Exception, parse_date, '2017-07:23')
+        self.assertRaises(ValueError, parse_date, '2017-07:23')
 
     def test_format_date(self):
         from census import format_date
@@ -48,8 +48,8 @@ class TestFunctions(unittest.TestCase):
         from census import parse_birth_date
 
         # Invalid
-        self.assertRaises(Exception, parse_birth_date, 'WAT')
-        self.assertRaises(Exception, parse_birth_date, '2015-10-TT')
+        self.assertRaises(ValueError, parse_birth_date, 'WAT')
+        self.assertRaises(ValueError, parse_birth_date, '2015-10-TT')
 
         # None
         self.assertEqual(None, parse_birth_date(''))
