@@ -98,6 +98,21 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual('K', fudge_gender(('1970', '01', '23', '3285')))
         self.assertEqual('M', fudge_gender(('1970', '01', '23', '0055')))
 
+    def test_calculate_age(self):
+        from census import calculate_age
+        self.assertEqual(1, calculate_age({'birth_date': ('2015',)}))
+        self.assertEqual(16, calculate_age({'birth_date': ('2000', '01', '16')}))
+        self.assertEqual(16, calculate_age({'birth_date': ('2000', '06', '16')}))
+        self.assertEqual(16, calculate_age({'birth_date': ('2000', '12', '31')}))
+        self.assertEqual(15, calculate_age({'birth_date': ('2001', '01', '01')}))
+
+    def test_is_eligable_for_grant(self):
+        from census import is_eligable_for_grant
+        self.assertEqual(False, is_eligable_for_grant({'birth_date': (2011,)}))
+        self.assertEqual(True, is_eligable_for_grant({'birth_date': (2000,)}))
+        self.assertEqual(True, is_eligable_for_grant({'birth_date': (1991,)}))
+        self.assertEqual(False, is_eligable_for_grant({'birth_date': (1990,)})) 
+
     def test_gender_stats(self):
         from census import gender_stats
 
