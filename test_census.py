@@ -111,7 +111,7 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(False, is_eligable_for_grant({'birth_date': (2011,)}))
         self.assertEqual(True, is_eligable_for_grant({'birth_date': (2000,)}))
         self.assertEqual(True, is_eligable_for_grant({'birth_date': (1991,)}))
-        self.assertEqual(False, is_eligable_for_grant({'birth_date': (1991,)}))
+        self.assertEqual(False, is_eligable_for_grant({'birth_date': (1990,)}))
 
     def test_gender_stats(self):
         from census import gender_stats
