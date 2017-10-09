@@ -92,5 +92,56 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual('A', format_groups(['A']))
         self.assertEqual('A;B;C', format_groups(['A', 'B', 'C']))
 
+    def test_fudge_gender(self):
+        from census import fudge_gender
+        self.assertEqual(None, fudge_gender(('1970', '01', '23', None)))
+        self.assertEqual('K', fudge_gender(('1970', '01', '23', '3285')))
+        self.assertEqual('M', fudge_gender(('1970', '01', '23', '0055')))
+
+    def test_gender_stats(self):
+        from census import gender_stats
+
+        rows = [
+            {'gender': 'M'},
+            {'gender': 'M'},
+            {'gender': 'K'},
+            {'gender': 'M'},
+            {'gender': 'M'},
+            {'gender': 'K'},
+            {'gender': 'K'},
+            {'gender': 'K'},
+            {'gender': 'M'},
+        ]
+
+        expected = {
+            'M': 5,
+            'K': 4,
+        }
+
+        self.assertDictEqual(expected, gender_stats(rows))
+
+    def test_age_stats(self):
+        from census import age_stats, parse_birth_date
+
+        rows = [
+            {'birth_date': parse_birth_date('1970-06-23')},
+            {'birth_date': parse_birth_date('2002-10-23')},
+            {'birth_date': parse_birth_date('1987-06-23')},
+            {'birth_date': parse_birth_date('1970-12-23')},
+            {'birth_date': parse_birth_date('1970-09-23')},
+            {'birth_date': parse_birth_date('2002-01-03')},
+            {'birth_date': parse_birth_date('2010-12-23')},
+            {'birth_date': parse_birth_date('2012-06-23')},
+        ]
+
+        expected = {
+            '0-5': 1,
+            '6-12': 1,
+            '13-20': 2,
+            '26+': 4
+        }
+
+        self.assertDictEqual(expected, age_stats(rows))
+
 if __name__ == '__main__':
     unittest.main()
