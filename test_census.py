@@ -2,6 +2,30 @@
 import unittest
 
 class TestFunctions(unittest.TestCase):
+    def test_clean_whitespace(self):
+        from census import clean_whitespace
+
+        row = {
+            'first_name': 'Berit  ',
+            'last_name': ' Andersson Verkaz ',
+            'address_postal_code': '123 45',
+            'birth_date': ':1970',
+        }
+
+        expected = {
+            'first_name': 'Berit',
+            'last_name': 'Andersson Verkaz',
+            'address_postal_code': '12345',
+            'birth_date': '1970'
+        }
+
+        clean_whitespace(row)
+        self.assertDictEqual(expected, row)
+
+    def test_strip_accents(self):
+        from census import strip_accents
+        self.assertEqual('veor', strip_accents('véör'))
+
     def test_parse_gender(self):
         from census import parse_gender
 
@@ -83,6 +107,12 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual('1995-10-14', format_birth_date(('1995', '10', '14', None)))
         self.assertEqual('1995-10-14-3856', format_birth_date(('1995', '10', '14', '3856')))
 
+    def test_fudge_gender(self):
+        from census import fudge_gender
+        self.assertEqual(None, fudge_gender(('1970', '01', '23', None)))
+        self.assertEqual('K', fudge_gender(('1970', '01', '23', '3285')))
+        self.assertEqual('M', fudge_gender(('1970', '01', '23', '0055')))
+
     def test_parse_groups(self):
         from census import parse_groups
         self.assertEqual([], parse_groups(None))
@@ -94,12 +124,6 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual('', format_groups([]))
         self.assertEqual('A', format_groups(['A']))
         self.assertEqual('A;B;C', format_groups(['A', 'B', 'C']))
-
-    def test_fudge_gender(self):
-        from census import fudge_gender
-        self.assertEqual(None, fudge_gender(('1970', '01', '23', None)))
-        self.assertEqual('K', fudge_gender(('1970', '01', '23', '3285')))
-        self.assertEqual('M', fudge_gender(('1970', '01', '23', '0055')))
 
     def test_calculate_age(self):
         from census import calculate_age
