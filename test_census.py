@@ -69,6 +69,7 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(('1995', '10', '14', None), parse_birth_date('95/10/14'))
         self.assertEqual(('1995', '10', '14', None), parse_birth_date('951014'))
         self.assertEqual(('2015', '10', '14', None), parse_birth_date('151014'))
+        self.assertEqual(('1950', '10', '15', None), parse_birth_date('1950.10.15'))
 
         # SSN
         self.assertEqual(('1995', '10', '14', '3856'), parse_birth_date('1995-10-14-3856'))
