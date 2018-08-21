@@ -7,7 +7,7 @@ import csv
 from collections import defaultdict
 from copy import copy
 
-REPORTING_YEAR = '2016'
+REPORTING_YEAR = '2017'
 
 FIELDS = [
     'first_name',
