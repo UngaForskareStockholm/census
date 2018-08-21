@@ -7,7 +7,7 @@ import csv
 from collections import defaultdict
 from copy import copy
 
-REPORTING_YEAR = '2016'
+REPORTING_YEAR = '2017'
 
 FIELDS = [
     'first_name',
@@ -39,12 +39,11 @@ def parse_gender(text):
     text = text.upper()
     if text in ['K', 'F', 'FEMALE', 'KVINNA', 'TJEJ']:
         return 'K'
-    elif text in ['M', 'MAN', 'MALE', 'KILLE']:
+    if text in ['M', 'MAN', 'MALE', 'KILLE']:
         return 'M'
-    elif text in ['', '?', 'EJ SVAR', 'ANNAT']:
+    if text in ['', '?', 'EJ SVAR', 'ANNAT', 'UPPGIFT OKÄND', 'VILL EJ UPPGE']:
         return None
-    else:
-        raise ValueError('invalid gender: ' + text)
+    raise ValueError('invalid gender: ' + text)
 
 def parse_year(text):
     if len(text) == 2:
@@ -77,7 +76,7 @@ def format_birth_date(parts):
 
     if parts[3] is not None:
         return '{0}-{1}-{2}-{3}'.format(parts[0], parts[1], parts[2], parts[3])
-    elif parts[1] is not None:
+    if parts[1] is not None:
         return '{0}-{1}-{2}'.format(parts[0], parts[1], parts[2])
     return parts[0]
 
@@ -85,7 +84,7 @@ def parse_birth_date(text):
     if text in ['', '?', '0']:
         return None
 
-    match = re.match(r'^(\d{2,4})(?:[/-]?(\d{2})[/-]?(\d{2})(?:[/-]?(\d{4}))?)?$', text)
+    match = re.match(r'^(\d{2,4})(?:[./-]?(\d{2})[./-]?(\d{2})(?:[./-]?(\d{4}))?)?$', text)
     if match:
         parts = match.groups()
         year = parse_year(parts[0])
@@ -217,13 +216,13 @@ def remove_duplicates(rows):
 
     return (unique, duplicates)
 
-def calculate_age(row):
-    result = int(REPORTING_YEAR) - int(row['birth_date'][0])
+def calculate_age(reporting_year, row):
+    result = int(reporting_year) - int(row['birth_date'][0])
     assert result >= 0
     return result
 
-def is_eligable_for_grant(row):
-    return 6 <= calculate_age(row) <= 25
+def is_eligable_for_grant(reporting_year, row):
+    return 6 <= calculate_age(reporting_year, row) <= 25
 
 def print_removal_cause_stats(rows):
     counts = defaultdict(int)
@@ -240,11 +239,11 @@ def gender_stats(rows):
 
     return genders
 
-def age_stats(rows):
+def age_stats(reporting_year, rows):
     ages = defaultdict(int)
 
     for row in rows:
-        age = calculate_age(row)
+        age = calculate_age(reporting_year, row)
         if 0 <= age <= 5:
             ages['0-5'] += 1
         elif 6 <= age <= 12:
@@ -285,7 +284,7 @@ def statistics_file(path):
 
     print()
     print('## Könsfördelning 6-25 år')
-    eligable = list(filter(is_eligable_for_grant, stockholm))
+    eligable = list(filter(lambda row: is_eligable_for_grant(REPORTING_YEAR, row), stockholm))
     genders_eligable = gender_stats(eligable)
     print('Total antal   6-25 år:   ' + format_count(len(eligable)))
     print('Andel flickor 6-25 år:   ' + format_statistic(genders_eligable['K'], len(eligable)))
@@ -293,7 +292,7 @@ def statistics_file(path):
 
     print()
     print('## Åldersfördelning')
-    ages_all = age_stats(stockholm)
+    ages_all = age_stats(REPORTING_YEAR, stockholm)
     print(' 0-5 år:                 ' + format_statistic(ages_all['0-5'], len(stockholm)))
     print(' 6-12 år:                ' + format_statistic(ages_all['6-12'], len(stockholm)))
     print('13-20 år:                ' + format_statistic(ages_all['13-20'], len(stockholm)))
@@ -305,7 +304,7 @@ def eligable_file(path):
     loaded = load(open(path), group)
 
     stockholm, _ = remove_not_stockholm(loaded)
-    eligable = list(filter(is_eligable_for_grant, stockholm))
+    eligable = list(filter(lambda row: is_eligable_for_grant(REPORTING_YEAR, row), stockholm))
     print('{:<40} {:>4}'.format(group, len(eligable)))
 
 def normalize_file(path):
