@@ -39,12 +39,11 @@ def parse_gender(text):
     text = text.upper()
     if text in ['K', 'F', 'FEMALE', 'KVINNA', 'TJEJ']:
         return 'K'
-    elif text in ['M', 'MAN', 'MALE', 'KILLE']:
+    if text in ['M', 'MAN', 'MALE', 'KILLE']:
         return 'M'
-    elif text in ['', '?', 'EJ SVAR', 'ANNAT']:
+    if text in ['', '?', 'EJ SVAR', 'ANNAT']:
         return None
-    else:
-        raise ValueError('invalid gender: ' + text)
+    raise ValueError('invalid gender: ' + text)
 
 def parse_year(text):
     if len(text) == 2:
@@ -77,7 +76,7 @@ def format_birth_date(parts):
 
     if parts[3] is not None:
         return '{0}-{1}-{2}-{3}'.format(parts[0], parts[1], parts[2], parts[3])
-    elif parts[1] is not None:
+    if parts[1] is not None:
         return '{0}-{1}-{2}'.format(parts[0], parts[1], parts[2])
     return parts[0]
 
