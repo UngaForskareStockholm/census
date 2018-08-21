@@ -18,7 +18,9 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(None, parse_gender(''))
         self.assertEqual(None, parse_gender('?'))
         self.assertEqual(None, parse_gender('ej svar'))
-        self.assertEqual(None, parse_gender('ANNAT'))
+        self.assertEqual(None, parse_gender('annat'))
+        self.assertEqual(None, parse_gender('vill ej uppge'))
+        self.assertEqual(None, parse_gender('uppgift okänd'))
 
         self.assertRaisesRegex(ValueError, 'invalid gender.*', parse_gender, 'WAT')
 

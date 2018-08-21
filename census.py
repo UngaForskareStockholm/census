@@ -41,7 +41,7 @@ def parse_gender(text):
         return 'K'
     if text in ['M', 'MAN', 'MALE', 'KILLE']:
         return 'M'
-    if text in ['', '?', 'EJ SVAR', 'ANNAT']:
+    if text in ['', '?', 'EJ SVAR', 'ANNAT', 'UPPGIFT OKÄND', 'VILL EJ UPPGE']:
         return None
     raise ValueError('invalid gender: ' + text)
 
