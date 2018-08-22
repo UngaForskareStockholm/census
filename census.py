@@ -229,7 +229,7 @@ def print_removal_cause_stats(rows):
     for row in rows:
         counts[row['removal_cause']] += 1
     for (key, value) in counts.items():
-        print('  ' + key + ': ' + str(value))
+        print('{}: {}'.format(key, value))
 
 def gender_stats(rows):
     genders = defaultdict(int)
@@ -311,8 +311,12 @@ def normalize_file(path):
     loaded = load(open(path), os.path.splitext(os.path.basename(path))[0])
     kept, invalid = remove_invalid(loaded)
 
-    print('= Kept ' + str(len(kept)))
-    print('= Invalid ' + str(len(invalid)))
+    print('Totalt:             {:<4}'.format(len(loaded)))
+    print('Ogiltiga:           {:<4}'.format(len(invalid)))
+    print('Giltiga:            {:<4}'.format(len(kept)))
+    print('Bidragsberättigade: {:<4}'.format(len(filter_eligable(REPORTING_YEAR, kept))))
+    print()
+    print('Ogiltighetsanledningar:')
     print_removal_cause_stats(invalid)
 
     save(kept, open(path + '.ok', 'w'))
