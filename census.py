@@ -104,6 +104,23 @@ def parse_groups(text):
 def format_groups(groups):
     return ';'.join(groups)
 
+def resides_in_stockholm(row):
+    return row['address_postal_code'].startswith('1')
+
+def calculate_age(reporting_year, row):
+    result = int(reporting_year) - int(row['birth_date'][0])
+    assert result >= 0
+    return result
+
+def is_eligable_for_grant(reporting_year, row):
+    return 6 <= calculate_age(reporting_year, row) <= 25 and resides_in_stockholm(row)
+
+def filter_stockholm(rows):
+    return [row for row in rows if resides_in_stockholm(row)]
+
+def filter_eligable(reporting_year, rows):
+    return [row for row in rows if is_eligable_for_grant(reporting_year, row)]
+
 def load(infile, group=None):
     result = []
     for row in csv.DictReader(infile, FIELDS):
@@ -154,22 +171,6 @@ def remove_invalid(rows):
 
     return (kept, invalid)
 
-def remove_not_stockholm(rows):
-    kept = []
-    removed = []
-
-    def remove(row, why):
-        row['removal_cause'] = why
-        removed.append(row)
-
-    for row in rows:
-        if not row['address_postal_code'].startswith('1'):
-            remove(row, 'address_postal_code not in stockholm')
-        else:
-            kept.append(row)
-
-    return (kept, removed)
-
 def maybe_duplicates(rows):
     def make_key(row):
         return strip_accents(row['first_name']).casefold() + \
@@ -216,14 +217,6 @@ def remove_duplicates(rows):
 
     return (unique, duplicates)
 
-def calculate_age(reporting_year, row):
-    result = int(reporting_year) - int(row['birth_date'][0])
-    assert result >= 0
-    return result
-
-def is_eligable_for_grant(reporting_year, row):
-    return 6 <= calculate_age(reporting_year, row) <= 25
-
 def print_removal_cause_stats(rows):
     counts = defaultdict(int)
     for row in rows:
@@ -265,12 +258,12 @@ def statistics_file(path):
         return '{:>4} {:>7.2%}'.format(count, count / total)
 
     loaded = load(open(path))
-    stockholm, unstockholm = remove_not_stockholm(loaded)
+    stockholm = filter_stockholm(loaded)
     print()
     print('# Länstillhörighet')
     print('Totalt:                  ' + format_count(len(loaded)))
     print('Stockholm:               ' + format_statistic(len(stockholm), len(loaded)))
-    print('Ej Stockholm:            ' + format_statistic(len(unstockholm), len(loaded)))
+    print('Ej Stockholm:            ' + format_statistic(len(loaded) - len(stockholm), len(loaded)))
     print()
     print()
     print('# Ålder- och könsfördelning av medlemmar bosatta i Stockholms Län')
@@ -302,9 +295,7 @@ def statistics_file(path):
 def eligable_file(path):
     group = os.path.splitext(os.path.basename(path))[0]
     loaded = load(open(path), group)
-
-    stockholm, _ = remove_not_stockholm(loaded)
-    eligable = list(filter(lambda row: is_eligable_for_grant(REPORTING_YEAR, row), stockholm))
+    eligable = filter_eligable(REPORTING_YEAR, loaded)
     print('{:<40} {:>4}'.format(group, len(eligable)))
 
 def normalize_file(path):

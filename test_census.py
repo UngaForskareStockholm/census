@@ -133,12 +133,47 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(16, calculate_age(2016, {'birth_date': ('2000', '12', '31')}))
         self.assertEqual(15, calculate_age(2016, {'birth_date': ('2001', '01', '01')}))
 
+    def test_resides_in_stockholm(self):
+        from census import resides_in_stockholm
+        self.assertTrue(resides_in_stockholm({'address_postal_code': '12456'}))
+        self.assertFalse(resides_in_stockholm({'address_postal_code': '87812'}))
+
     def test_is_eligable_for_grant(self):
         from census import is_eligable_for_grant
-        self.assertEqual(False, is_eligable_for_grant(2016, {'birth_date': (2011,)}))
-        self.assertEqual(True, is_eligable_for_grant(2016, {'birth_date': (2000,)}))
-        self.assertEqual(True, is_eligable_for_grant(2016, {'birth_date': (1991,)}))
-        self.assertEqual(False, is_eligable_for_grant(2016, {'birth_date': (1990,)}))
+
+        def row(postal_code, birth_year):
+            return {'address_postal_code': postal_code, 'birth_date': (birth_year,)}
+
+        # Just right
+        self.assertTrue(is_eligable_for_grant(2016, row('14231', 2010)))
+        self.assertTrue(is_eligable_for_grant(2016, row('11117', 1991)))
+
+        # Not residing in Stockholm
+        self.assertFalse(is_eligable_for_grant(2016, row('98212', 2010)))
+        self.assertFalse(is_eligable_for_grant(2016, row('23111', 1991)))
+
+        # Too old
+        self.assertFalse(is_eligable_for_grant(2016, row('14231', 1990)))
+
+        # Too young
+        self.assertFalse(is_eligable_for_grant(2016, row('14231', 2011)))
+
+    def test_filter_eligable(self):
+        from census import filter_eligable
+
+        rows = [
+            {'address_postal_code': '14231', 'birth_date': (1990,)},
+            {'address_postal_code': '27432', 'birth_date': (1991,)},
+            {'address_postal_code': '11117', 'birth_date': (2000,)},
+            {'address_postal_code': '98765', 'birth_date': (2000,)},
+            {'address_postal_code': '17512', 'birth_date': (1990,)},
+        ]
+
+        expected = [
+            {'address_postal_code': '11117', 'birth_date': (2000,)},
+        ]
+
+        self.assertListEqual(expected, filter_eligable(2016, rows))
 
     def test_gender_stats(self):
         from census import gender_stats
