@@ -63,6 +63,9 @@ def test_parse_date():
     assert parse_date('2017/10/23') == ('2017', '10', '23')
     assert parse_date('2017 10 23') == ('2017', '10', '23')
 
+    # No day
+    assert parse_date('2017-10') == ('2017', '10', None)
+
     with pytest.raises(ValueError):
         parse_date('2017-07:23')
 
@@ -70,6 +73,7 @@ def test_format_date():
     from census import format_date
     assert format_date(None) == ''
     assert format_date(('2017', '07', '14')) == '2017-07-14'
+    assert format_date(('2017', '07', None)) == '2017-07'
 
 def test_parse_birth_date():
     from census import parse_birth_date

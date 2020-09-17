@@ -55,14 +55,15 @@ def parse_year(text):
 def format_date(parts):
     if parts is None:
         return ''
-
+    if parts[2] is None:
+        return '{0}-{1}'.format(parts[0], parts[1])
     return '{0}-{1}-{2}'.format(parts[0], parts[1], parts[2])
 
 def parse_date(text):
     if not text:
         return None
 
-    match = re.match(r'^(\d{2,4})[ ./-]?(\d{2})[ ./-]?(\d{2})$', text)
+    match = re.match(r'^(\d{2,4})[ ./-]?(\d{2})(?:[ ./-]?(\d{2}))?$', text)
     if match:
         parts = match.groups()
         year = parse_year(parts[0])
