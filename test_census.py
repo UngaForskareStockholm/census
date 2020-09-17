@@ -79,6 +79,8 @@ def test_parse_birth_date():
         parse_birth_date('WAT')
     with pytest.raises(ValueError):
         parse_birth_date('2015-10-TT')
+    with pytest.raises(ValueError):
+        parse_birth_date('2017-07:23')
 
     # None
     assert parse_birth_date('') is None
@@ -104,6 +106,7 @@ def test_parse_birth_date():
 
     # SSN
     assert parse_birth_date('1995-10-14-3856') == ('1995', '10', '14', '3856')
+    assert parse_birth_date('199510143856') == ('1995', '10', '14', '3856')
 
 def test_format_birth_date():
     from census import format_birth_date
