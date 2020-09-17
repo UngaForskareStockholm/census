@@ -80,6 +80,13 @@ def format_birth_date(parts):
         return '{0}-{1}-{2}'.format(parts[0], parts[1], parts[2])
     return parts[0]
 
+def none_if_zeros(text):
+    if text is None:
+        return None
+    if re.match(r'^0*$', text):
+        return None
+    return text
+
 def parse_birth_date(text):
     if text in ['', '?', '0']:
         return None
@@ -88,7 +95,10 @@ def parse_birth_date(text):
     if match:
         parts = match.groups()
         year = parse_year(parts[0])
-        return (year, parts[1], parts[2], parts[3])
+        month = none_if_zeros(parts[1])
+        day = none_if_zeros(parts[2])
+        last = none_if_zeros(parts[3])
+        return (year, month, day, last)
     raise ValueError('invalid birth date: ' + text)
 
 def fudge_gender(birth_date):

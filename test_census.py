@@ -106,6 +106,11 @@ def test_parse_birth_date():
     assert parse_birth_date('951014') == ('1995', '10', '14', None)
     assert parse_birth_date('151014') == ('2015', '10', '14', None)
 
+    # Zeros
+    assert parse_birth_date('199510140000') == ('1995', '10', '14', None)
+    assert parse_birth_date('199510000000') == ('1995', '10', None, None)
+    assert parse_birth_date('199500000000') == ('1995', None, None, None)
+
     # SSN
     assert parse_birth_date('1995-10-14-3856') == ('1995', '10', '14', '3856')
     assert parse_birth_date('199510143856') == ('1995', '10', '14', '3856')
