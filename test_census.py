@@ -6,14 +6,12 @@ def test_clean_whitespace():
     row = {
         'first_name': 'Berit  ',
         'last_name': ' Andersson Verkaz ',
-        'address_postal_code': '123 45',
         'birth_date': ':1970',
     }
 
     expected = {
         'first_name': 'Berit',
         'last_name': 'Andersson Verkaz',
-        'address_postal_code': '12345',
         'birth_date': '1970'
     }
 
@@ -124,6 +122,28 @@ def test_fudge_gender():
     assert fudge_gender(('1970', '01', '23', None)) is None
     assert fudge_gender(('1970', '01', '23', '3285')) == 'K'
     assert fudge_gender(('1970', '01', '23', '0055')) == 'M'
+
+def test_normalize_postal_code():
+    from census import normalize_postal_code
+    assert normalize_postal_code('123 45') == '12345'
+    assert normalize_postal_code('12345') == '12345'
+
+    # Unnecessary place name
+    assert normalize_postal_code('123 45 Stockholm') == '12345'
+    assert normalize_postal_code('12345Stockholm') == '12345'
+
+    # None
+    assert normalize_postal_code('') is None
+    assert normalize_postal_code('-') is None
+    assert normalize_postal_code('Saknas') is None
+    assert normalize_postal_code('Vetej') is None
+    assert normalize_postal_code('Skyddadadress') is None
+
+    # Invalid
+    with pytest.raises(ValueError):
+        normalize_postal_code('123')
+    with pytest.raises(ValueError):
+        normalize_postal_code('Stockholm')
 
 def test_parse_groups():
     from census import parse_groups

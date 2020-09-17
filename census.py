@@ -27,7 +27,6 @@ def clean_whitespace(row):
     for key, value in row.items():
         if value is not None:
             row[key] = value.strip()
-    row['address_postal_code'] = row['address_postal_code'].replace(' ', '')
     if row['birth_date'].startswith(':'): # THS Kemisektionen special...
         row['birth_date'] = row['birth_date'][1:]
 
@@ -97,6 +96,18 @@ def fudge_gender(birth_date):
         return 'K' if int(birth_date[3][2]) % 2 == 0 else 'M'
     return None
 
+def normalize_postal_code(text):
+    text = text.lower().replace(' ', '')
+    if text in ['', '-', 'saknas', 'vetej']:
+        return None
+    if text.startswith('skyddad'):
+        return None
+
+    match = re.match(r'^(\d{5})', text)
+    if match:
+        return match.groups()[0]
+    raise ValueError('invalid postal code: ' + text)
+
 def parse_groups(text):
     if text is not None:
         return text.split(';')
@@ -128,6 +139,7 @@ def load(infile, group=None):
         clean_whitespace(row)
         row['gender'] = parse_gender(row['gender'])
         row['birth_date'] = parse_birth_date(row['birth_date'])
+        row['address_postal_code'] = normalize_postal_code(row['address_postal_code'])
         row['confirmed_membership_at'] = parse_date(row['confirmed_membership_at'])
         row['groups'] = parse_groups(row['groups'])
         if not row['groups'] and group is not None:
@@ -163,7 +175,7 @@ def remove_invalid(rows):
             remove(row, 'birth_date not given')
         elif row['gender'] is None:
             remove(row, 'gender not given')
-        elif row['address_postal_code'] in ['', '-', 'Saknas', 'Vetej', None]:
+        elif row['address_postal_code'] is None:
             remove(row, 'address_postal_code not given')
         elif row['email'] == '' and row['phone'] == '':
             remove(row, 'neither email nor phone given')
