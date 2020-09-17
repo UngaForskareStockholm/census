@@ -61,7 +61,7 @@ def test_parse_date():
     assert parse_date('2017.10.23') == ('2017', '10', '23')
     assert parse_date('2017-10-23') == ('2017', '10', '23')
     assert parse_date('2017/10/23') == ('2017', '10', '23')
-    assert parse_date('2017/10/23') == ('2017', '10', '23')
+    assert parse_date('2017 10 23') == ('2017', '10', '23')
 
     with pytest.raises(ValueError):
         parse_date('2017-07:23')
@@ -91,14 +91,16 @@ def test_parse_birth_date():
     assert parse_birth_date('15') == ('2015', None, None, None)
 
     # Date
+    assert parse_birth_date('1950.10.15') == ('1950', '10', '15', None)
     assert parse_birth_date('1995-10-14') == ('1995', '10', '14', None)
     assert parse_birth_date('1995/10/14') == ('1995', '10', '14', None)
+    assert parse_birth_date('1995 10 14') == ('1995', '10', '14', None)
     assert parse_birth_date('19951014') == ('1995', '10', '14', None)
     assert parse_birth_date('95-10-14') == ('1995', '10', '14', None)
     assert parse_birth_date('95/10/14') == ('1995', '10', '14', None)
+    assert parse_birth_date('95 10 14') == ('1995', '10', '14', None)
     assert parse_birth_date('951014') == ('1995', '10', '14', None)
     assert parse_birth_date('151014') == ('2015', '10', '14', None)
-    assert parse_birth_date('1950.10.15') == ('1950', '10', '15', None)
 
     # SSN
     assert parse_birth_date('1995-10-14-3856') == ('1995', '10', '14', '3856')

@@ -62,7 +62,7 @@ def parse_date(text):
     if not text:
         return None
 
-    match = re.match(r'^(\d{2,4})[\./-]?(\d{2})[\./-]?(\d{2})$', text)
+    match = re.match(r'^(\d{2,4})[ \./-]?(\d{2})[ \./-]?(\d{2})$', text)
     if match:
         parts = match.groups()
         year = parse_year(parts[0])
@@ -84,7 +84,7 @@ def parse_birth_date(text):
     if text in ['', '?', '0']:
         return None
 
-    match = re.match(r'^(\d{2,4})(?:[./-]?(\d{2})[./-]?(\d{2})(?:[./-]?(\d{4}))?)?$', text)
+    match = re.match(r'^(\d{2,4})(?:[ ./-]?(\d{2})[ ./-]?(\d{2})(?:[ ./-]?(\d{4}))?)?$', text)
     if match:
         parts = match.groups()
         year = parse_year(parts[0])
