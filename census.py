@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import csv
+import unicodedata
 from collections import defaultdict
 from copy import copy
 
@@ -31,7 +32,6 @@ def clean_whitespace(row):
         row['birth_date'] = row['birth_date'][1:]
 
 def strip_accents(text):
-    import unicodedata
     return ''.join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
 
 def parse_gender(text):
