@@ -44,7 +44,7 @@ def test_parse_gender():
     assert parse_gender('vill ej uppge') is None
     assert parse_gender('uppgift okänd') is None
 
-    with pytest.raises(ValueError, matches='invalid gender.*'):
+    with pytest.raises(ValueError, match='invalid gender.*'):
         parse_gender('WAT')
 
 def test_parse_year():
