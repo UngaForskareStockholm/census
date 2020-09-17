@@ -1,19 +1,28 @@
 import pytest
+from census import clean_whitespace, strip_accents
+from census import parse_gender, fudge_gender
+from census import parse_year, parse_date, format_date
+from census import parse_birth_date, format_birth_date
+from census import normalize_postal_code
+from census import parse_groups, format_groups
+from census import calculate_age
+from census import resides_in_stockholm
+from census import is_eligable_for_grant
+from census import filter_eligable
+from census import gender_stats
+from census import age_stats
 
 def test_clean_whitespace():
-    from census import clean_whitespace
 
     row = {
         'first_name': 'Berit  ',
         'last_name': ' Andersson Verkaz ',
-        'address_postal_code': '123 45',
         'birth_date': ':1970',
     }
 
     expected = {
         'first_name': 'Berit',
         'last_name': 'Andersson Verkaz',
-        'address_postal_code': '12345',
         'birth_date': '1970'
     }
 
@@ -21,12 +30,9 @@ def test_clean_whitespace():
     assert row == expected
 
 def test_strip_accents():
-    from census import strip_accents
     assert strip_accents('véör') == 'veor'
 
 def test_parse_gender():
-    from census import parse_gender
-
     assert parse_gender('K') == 'K'
     assert parse_gender('Kvinna') == 'K'
     assert parse_gender('TJEJ') == 'K'
@@ -44,41 +50,42 @@ def test_parse_gender():
     assert parse_gender('vill ej uppge') is None
     assert parse_gender('uppgift okänd') is None
 
-    with pytest.raises(ValueError, matches='invalid gender.*'):
+    with pytest.raises(ValueError, match='invalid gender.*'):
         parse_gender('WAT')
 
 def test_parse_year():
-    from census import parse_year
     assert parse_year('1997') == '1997'
     assert parse_year('51') == '1951'
     assert parse_year('50') == '2050'
     assert parse_year('97') == '1997'
 
 def test_parse_date():
-    from census import parse_date
     assert parse_date('') is None
     assert parse_date('17.10.23') == ('2017', '10', '23')
     assert parse_date('2017.10.23') == ('2017', '10', '23')
     assert parse_date('2017-10-23') == ('2017', '10', '23')
     assert parse_date('2017/10/23') == ('2017', '10', '23')
-    assert parse_date('2017/10/23') == ('2017', '10', '23')
+    assert parse_date('2017 10 23') == ('2017', '10', '23')
+
+    # No day
+    assert parse_date('2017-10') == ('2017', '10', None)
 
     with pytest.raises(ValueError):
         parse_date('2017-07:23')
 
 def test_format_date():
-    from census import format_date
     assert format_date(None) == ''
     assert format_date(('2017', '07', '14')) == '2017-07-14'
+    assert format_date(('2017', '07', None)) == '2017-07'
 
 def test_parse_birth_date():
-    from census import parse_birth_date
-
     # Invalid
     with pytest.raises(ValueError):
         parse_birth_date('WAT')
     with pytest.raises(ValueError):
         parse_birth_date('2015-10-TT')
+    with pytest.raises(ValueError):
+        parse_birth_date('2017-07:23')
 
     # None
     assert parse_birth_date('') is None
@@ -91,45 +98,69 @@ def test_parse_birth_date():
     assert parse_birth_date('15') == ('2015', None, None, None)
 
     # Date
+    assert parse_birth_date('1950.10.15') == ('1950', '10', '15', None)
     assert parse_birth_date('1995-10-14') == ('1995', '10', '14', None)
     assert parse_birth_date('1995/10/14') == ('1995', '10', '14', None)
+    assert parse_birth_date('1995 10 14') == ('1995', '10', '14', None)
     assert parse_birth_date('19951014') == ('1995', '10', '14', None)
     assert parse_birth_date('95-10-14') == ('1995', '10', '14', None)
     assert parse_birth_date('95/10/14') == ('1995', '10', '14', None)
+    assert parse_birth_date('95 10 14') == ('1995', '10', '14', None)
     assert parse_birth_date('951014') == ('1995', '10', '14', None)
     assert parse_birth_date('151014') == ('2015', '10', '14', None)
-    assert parse_birth_date('1950.10.15') == ('1950', '10', '15', None)
+
+    # Zeros
+    assert parse_birth_date('199510140000') == ('1995', '10', '14', None)
+    assert parse_birth_date('199510000000') == ('1995', '10', None, None)
+    assert parse_birth_date('199500000000') == ('1995', None, None, None)
 
     # SSN
     assert parse_birth_date('1995-10-14-3856') == ('1995', '10', '14', '3856')
+    assert parse_birth_date('199510143856') == ('1995', '10', '14', '3856')
 
 def test_format_birth_date():
-    from census import format_birth_date
     assert format_birth_date(None) == ''
     assert format_birth_date(('1995', None, None, None)) == '1995'
     assert format_birth_date(('1995', '10', '14', None)) == '1995-10-14'
     assert format_birth_date(('1995', '10', '14', '3856')) == '1995-10-14-3856'
 
 def test_fudge_gender():
-    from census import fudge_gender
     assert fudge_gender(('1970', '01', '23', None)) is None
     assert fudge_gender(('1970', '01', '23', '3285')) == 'K'
     assert fudge_gender(('1970', '01', '23', '0055')) == 'M'
 
+def test_normalize_postal_code():
+    assert normalize_postal_code('123 45') == '12345'
+    assert normalize_postal_code('12345') == '12345'
+
+    # Unnecessary place name
+    assert normalize_postal_code('123 45 Stockholm') == '12345'
+    assert normalize_postal_code('12345Stockholm') == '12345'
+
+    # None
+    assert normalize_postal_code('') is None
+    assert normalize_postal_code('-') is None
+    assert normalize_postal_code('Saknas') is None
+    assert normalize_postal_code('Vetej') is None
+    assert normalize_postal_code('Skyddadadress') is None
+
+    # Invalid
+    with pytest.raises(ValueError):
+        normalize_postal_code('123')
+    with pytest.raises(ValueError):
+        normalize_postal_code('Stockholm')
+
 def test_parse_groups():
-    from census import parse_groups
     assert parse_groups(None) == []
     assert parse_groups('A') == ['A']
     assert parse_groups('A;B;C') == ['A', 'B', 'C']
 
 def test_format_groups():
-    from census import format_groups
     assert format_groups([]) == ''
     assert format_groups(['A']) == 'A'
     assert format_groups(['A', 'B', 'C']) == 'A;B;C'
 
 def test_calculate_age():
-    from census import calculate_age
     assert calculate_age(2016, {'birth_date': ('2015',)}) == 1
     assert calculate_age(2016, {'birth_date': ('2000', '01', '16')}) == 16
     assert calculate_age(2016, {'birth_date': ('2000', '06', '16')}) == 16
@@ -137,13 +168,10 @@ def test_calculate_age():
     assert calculate_age(2016, {'birth_date': ('2001', '01', '01')}) == 15
 
 def test_resides_in_stockholm():
-    from census import resides_in_stockholm
     assert resides_in_stockholm({'address_postal_code': '12456'})
     assert not resides_in_stockholm({'address_postal_code': '87812'})
 
 def test_is_eligable_for_grant():
-    from census import is_eligable_for_grant
-
     def row(postal_code, birth_year):
         return {'address_postal_code': postal_code, 'birth_date': (birth_year,)}
 
@@ -162,8 +190,6 @@ def test_is_eligable_for_grant():
     assert not is_eligable_for_grant(2016, row('14231', 2011))
 
 def test_filter_eligable():
-    from census import filter_eligable
-
     rows = [
         {'address_postal_code': '14231', 'birth_date': (1990,)},
         {'address_postal_code': '27432', 'birth_date': (1991,)},
@@ -179,8 +205,6 @@ def test_filter_eligable():
     assert filter_eligable(2016, rows) == expected
 
 def test_gender_stats():
-    from census import gender_stats
-
     rows = [
         {'gender': 'M'},
         {'gender': 'M'},
@@ -201,8 +225,6 @@ def test_gender_stats():
     assert gender_stats(rows) == expected
 
 def test_age_stats():
-    from census import age_stats, parse_birth_date
-
     rows = [
         {'birth_date': parse_birth_date('1970-06-23')},
         {'birth_date': parse_birth_date('2002-10-23')},
