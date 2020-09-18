@@ -42,14 +42,14 @@ def format_gender(gender):
     return 'Annat'
 
 def parse_gender(text):
-    text = text.upper()
-    if text in ['K', 'F', 'FEMALE', 'KVINNA', 'TJEJ']:
+    text = text.lower()
+    if text in ['k', 'f', 'female', 'kvinna', 'tjej']:
         return 'K'
-    if text in ['M', 'MAN', 'MALE', 'KILLE']:
+    if text in ['m', 'man', 'male', 'kille']:
         return 'M'
-    if text in ['ANNAT', 'VILL EJ UPPGE']:
+    if text in ['annat', 'vill ej uppge']:
         return 'A'
-    if text in ['', '?', 'EJ SVAR', 'UPPGIFT OKÄND']:
+    if text in ['', '?', 'ej svar', 'uppgift okänd']:
         return None
     raise ValueError('invalid gender: ' + text)
 
