@@ -40,7 +40,9 @@ def parse_gender(text):
         return 'K'
     if text in ['M', 'MAN', 'MALE', 'KILLE']:
         return 'M'
-    if text in ['', '?', 'EJ SVAR', 'ANNAT', 'UPPGIFT OKÄND', 'VILL EJ UPPGE']:
+    if text in ['ANNAT', 'VILL EJ UPPGE']:
+        return 'A'
+    if text in ['', '?', 'EJ SVAR', 'UPPGIFT OKÄND']:
         return None
     raise ValueError('invalid gender: ' + text)
 
@@ -295,8 +297,9 @@ def statistics_file(path):
     print('## Könsfördelning alla åldrar')
     genders_all = gender_stats(stockholm)
     print('Totalt antal medlemmar:  ' + format_count(len(stockholm)))
-    print('Totalt andel kvinnor:    ' + format_statistic(genders_all['K'], len(stockholm)))
-    print('Totalt andel män:        ' + format_statistic(genders_all['M'], len(stockholm)))
+    print('Andel kvinnor:           ' + format_statistic(genders_all['K'], len(stockholm)))
+    print('Andel män:               ' + format_statistic(genders_all['M'], len(stockholm)))
+    print('Andel annat:             ' + format_statistic(genders_all['A'], len(stockholm)))
 
     print()
     print('## Könsfördelning 6-25 år')
@@ -305,6 +308,7 @@ def statistics_file(path):
     print('Total antal   6-25 år:   ' + format_count(len(eligable)))
     print('Andel flickor 6-25 år:   ' + format_statistic(genders_eligable['K'], len(eligable)))
     print('Andel pojkar  6-25 år:   ' + format_statistic(genders_eligable['M'], len(eligable)))
+    print('Andel annat   6-25 år:   ' + format_statistic(genders_eligable['A'], len(eligable)))
 
     print()
     print('## Åldersfördelning')

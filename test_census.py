@@ -43,11 +43,12 @@ def test_parse_gender():
     assert parse_gender('Male') == 'M'
     assert parse_gender('kille') == 'M'
 
+    assert parse_gender('annat') == 'A'
+    assert parse_gender('vill ej uppge') == 'A'
+
     assert parse_gender('') is None
     assert parse_gender('?') is None
     assert parse_gender('ej svar') is None
-    assert parse_gender('annat') is None
-    assert parse_gender('vill ej uppge') is None
     assert parse_gender('uppgift okänd') is None
 
     with pytest.raises(ValueError, match='invalid gender.*'):
@@ -209,9 +210,11 @@ def test_gender_stats():
         {'gender': 'M'},
         {'gender': 'M'},
         {'gender': 'K'},
+        {'gender': 'A'},
         {'gender': 'M'},
         {'gender': 'M'},
         {'gender': 'K'},
+        {'gender': 'A'},
         {'gender': 'K'},
         {'gender': 'K'},
         {'gender': 'M'},
@@ -220,6 +223,7 @@ def test_gender_stats():
     expected = {
         'M': 5,
         'K': 4,
+        'A': 2,
     }
 
     assert gender_stats(rows) == expected
