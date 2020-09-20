@@ -34,6 +34,13 @@ def clean_whitespace(row):
 def strip_accents(text):
     return ''.join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
 
+def format_gender(gender):
+    if gender == 'M':
+        return 'Man'
+    if gender == 'K':
+        return 'Kvinna'
+    return 'Annat'
+
 def parse_gender(text):
     text = text.upper()
     if text in ['K', 'F', 'FEMALE', 'KVINNA', 'TJEJ']:
@@ -166,6 +173,7 @@ def save(rows, outfile):
     for row in rows:
         copied = copy(row)
         copied['birth_date'] = format_birth_date(copied['birth_date'])
+        copied['gender'] = format_gender(copied['gender'])
         copied['confirmed_membership_at'] = format_date(copied['confirmed_membership_at'])
         copied['groups'] = format_groups(copied['groups'])
         writer.writerow(copied)

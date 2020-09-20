@@ -1,6 +1,6 @@
 import pytest
 from census import clean_whitespace, strip_accents
-from census import parse_gender, fudge_gender
+from census import parse_gender, fudge_gender, format_gender
 from census import parse_year, parse_date, format_date
 from census import parse_birth_date, format_birth_date
 from census import normalize_postal_code
@@ -53,6 +53,11 @@ def test_parse_gender():
 
     with pytest.raises(ValueError, match='invalid gender.*'):
         parse_gender('WAT')
+
+def test_format_gender():
+    assert format_gender('K') == 'Kvinna'
+    assert format_gender('M') == 'Man'
+    assert format_gender('A') == 'Annat'
 
 def test_parse_year():
     assert parse_year('1997') == '1997'
