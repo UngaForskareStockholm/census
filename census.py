@@ -34,13 +34,22 @@ def clean_whitespace(row):
 def strip_accents(text):
     return ''.join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
 
+def format_gender(gender):
+    if gender == 'M':
+        return 'Man'
+    if gender == 'K':
+        return 'Kvinna'
+    return 'Annat'
+
 def parse_gender(text):
-    text = text.upper()
-    if text in ['K', 'F', 'FEMALE', 'KVINNA', 'TJEJ']:
+    text = text.lower()
+    if text in ['k', 'f', 'female', 'kvinna', 'tjej']:
         return 'K'
-    if text in ['M', 'MAN', 'MALE', 'KILLE']:
+    if text in ['m', 'man', 'male', 'kille']:
         return 'M'
-    if text in ['', '?', 'EJ SVAR', 'ANNAT', 'UPPGIFT OKÄND', 'VILL EJ UPPGE']:
+    if text in ['annat', 'vill ej uppge']:
+        return 'A'
+    if text in ['', '?', 'ej svar', 'uppgift okänd']:
         return None
     raise ValueError('invalid gender: ' + text)
 
@@ -164,6 +173,7 @@ def save(rows, outfile):
     for row in rows:
         copied = copy(row)
         copied['birth_date'] = format_birth_date(copied['birth_date'])
+        copied['gender'] = format_gender(copied['gender'])
         copied['confirmed_membership_at'] = format_date(copied['confirmed_membership_at'])
         copied['groups'] = format_groups(copied['groups'])
         writer.writerow(copied)
@@ -295,8 +305,9 @@ def statistics_file(path):
     print('## Könsfördelning alla åldrar')
     genders_all = gender_stats(stockholm)
     print('Totalt antal medlemmar:  ' + format_count(len(stockholm)))
-    print('Totalt andel kvinnor:    ' + format_statistic(genders_all['K'], len(stockholm)))
-    print('Totalt andel män:        ' + format_statistic(genders_all['M'], len(stockholm)))
+    print('Andel kvinnor:           ' + format_statistic(genders_all['K'], len(stockholm)))
+    print('Andel män:               ' + format_statistic(genders_all['M'], len(stockholm)))
+    print('Andel annat:             ' + format_statistic(genders_all['A'], len(stockholm)))
 
     print()
     print('## Könsfördelning 6-25 år')
@@ -305,6 +316,7 @@ def statistics_file(path):
     print('Total antal   6-25 år:   ' + format_count(len(eligable)))
     print('Andel flickor 6-25 år:   ' + format_statistic(genders_eligable['K'], len(eligable)))
     print('Andel pojkar  6-25 år:   ' + format_statistic(genders_eligable['M'], len(eligable)))
+    print('Andel annat   6-25 år:   ' + format_statistic(genders_eligable['A'], len(eligable)))
 
     print()
     print('## Åldersfördelning')

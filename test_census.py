@@ -1,6 +1,6 @@
 import pytest
 from census import clean_whitespace, strip_accents
-from census import parse_gender, fudge_gender
+from census import parse_gender, fudge_gender, format_gender
 from census import parse_year, parse_date, format_date
 from census import parse_birth_date, format_birth_date
 from census import normalize_postal_code
@@ -43,15 +43,21 @@ def test_parse_gender():
     assert parse_gender('Male') == 'M'
     assert parse_gender('kille') == 'M'
 
+    assert parse_gender('annat') == 'A'
+    assert parse_gender('vill ej uppge') == 'A'
+
     assert parse_gender('') is None
     assert parse_gender('?') is None
     assert parse_gender('ej svar') is None
-    assert parse_gender('annat') is None
-    assert parse_gender('vill ej uppge') is None
     assert parse_gender('uppgift okänd') is None
 
     with pytest.raises(ValueError, match='invalid gender.*'):
         parse_gender('WAT')
+
+def test_format_gender():
+    assert format_gender('K') == 'Kvinna'
+    assert format_gender('M') == 'Man'
+    assert format_gender('A') == 'Annat'
 
 def test_parse_year():
     assert parse_year('1997') == '1997'
@@ -209,9 +215,11 @@ def test_gender_stats():
         {'gender': 'M'},
         {'gender': 'M'},
         {'gender': 'K'},
+        {'gender': 'A'},
         {'gender': 'M'},
         {'gender': 'M'},
         {'gender': 'K'},
+        {'gender': 'A'},
         {'gender': 'K'},
         {'gender': 'K'},
         {'gender': 'M'},
@@ -220,6 +228,7 @@ def test_gender_stats():
     expected = {
         'M': 5,
         'K': 4,
+        'A': 2,
     }
 
     assert gender_stats(rows) == expected
